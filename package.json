@@ -6,6 +6,7 @@
   "author": "KostyaCube <psychocube91@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0"
   },
   "scripts": {
