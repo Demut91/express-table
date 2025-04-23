@@ -4,7 +4,9 @@
 
 input[type="text"] {
     margin-bottom: 20px; 
-    padding: 8px 
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
 }
 
 table {
@@ -25,6 +27,10 @@ th:last-child {
     text-align: center;
 }
 
+th:first-child {
+    text-align: center;
+}
+
 td {
     padding: 10px;
     border: 1px solid #ccc;
@@ -32,4 +38,11 @@ td {
 
 td:last-child {
     text-align: center;
+}
+
+button {
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
 }
