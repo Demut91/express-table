@@ -1,0 +1,35 @@
+.container {
+    padding: 20px;
+}
+
+input[type="text"] {
+    margin-bottom: 20px; 
+    padding: 8px 
+}
+
+table {
+    width: 100%;
+}
+
+tr {
+    background-color: #f0f0f0;
+}
+
+th {
+    padding: 10px; 
+    text-align: left;
+    border: 1px solid #ccc;
+}
+
+th:last-child {
+    text-align: center;
+}
+
+td {
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+td:last-child {
+    text-align: center;
+}

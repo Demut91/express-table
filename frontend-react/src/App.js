@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
+import './styles.css';
 
 const PAGE_SIZE = 20;
 const API_URL = 'http://localhost:4000';
@@ -12,10 +13,15 @@ function App() {
   const [more, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  const observer = useRef();
   const [selected, setSelected] = useState(new Set());
 
+  const isLoadingRef = useRef(false);
+
   const loadItems = useCallback(async () => {
-    if (loading || !more) return;
+    if (loading || !more || isLoadingRef.current) return;
+  
+    isLoadingRef.current = true; 
   
     setLoading(true);
     const res = await axios.get(`${API_URL}/items`, {
@@ -30,8 +36,23 @@ function App() {
     if (newItems.length < PAGE_SIZE) setHasMore(false);
   
     setLoading(false);
+    isLoadingRef.current = false; 
   }, [skip, search, loading, more]);
   
+  const lastItemRef = useCallback((node) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && more) {
+        loadItems();
+      }
+    });
+
+    if (node) observer.current.observe(node);
+
+  }, [loading, more, loadItems]);
+
   const handleSearch = (e) => {
     setSearch(e.target.value);
     setItems([]);
@@ -51,8 +72,31 @@ function App() {
     loadItems();
   }, [search]);
 
+  useEffect(() => {
+    const loadState = async () => {
+      const res = await axios.get(`${API_URL}/state`);
+      const { selected } = res.data;
+      setSelected(new Set(selected));
+    };
+  
+    loadState();
+  }, []);
+
+  useEffect(() => {
+    const saveState = async () => {
+      await axios.post(`${API_URL}/save-state`, {
+        selected: Array.from(selected),
+        order: [],
+      });
+    };
+  
+    if (selected.size > 0) {
+      saveState();
+    }
+  }, [selected]);
+  
   return (
-    <div style={{ padding: 20 }}>
+    <div className='container'>
       <h1>Express numbers table</h1>
 
       <input
@@ -60,15 +104,14 @@ function App() {
         value={search}
         onChange={handleSearch}
         placeholder="Поиск..."
-        style={{ marginBottom: 20, padding: 8  }}
         />
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ccc', }}>
+      <table>
         <thead>
-          <tr style={{ backgroundColor: '#f0f0f0' }}>
-            <th style={{ padding: 10, textAlign: 'left', border: '1px solid #ccc' }}>ID</th>
-            <th style={{ padding: 10, textAlign: 'left', border: '1px solid #ccc' }}>Value</th>
-            <th style={{ padding: 10, textAlign: 'center', border: '1px solid #ccc'  }}>Checked</th>
+          <tr>
+            <th>ID</th>
+            <th>Value</th>
+            <th>Checked</th>
           </tr>
         </thead>
         
@@ -76,14 +119,12 @@ function App() {
           {items.map((item, index) => (
             <tr
               key={item.id}
-              style={{
-                background: selected.has(item.id) ? '#7dd5f0' : '#fff',
-                borderBottom: '1px solid #ccc'
-              }}
+              ref={index === items.length - 1 ? lastItemRef : null}
+              style={{ background: selected.has(item.id) ? '#d7f4fc' : '#fff' }}
             >
-              <td style={{ padding: 10, border: '1px solid #ccc' }}>{item.id}</td>
-              <td style={{ padding: 10, border: '1px solid #ccc' }}>{item.value}</td>
-              <td style={{ padding: 10, border: '1px solid #ccc', textAlign: 'center' }}>
+              <td>{item.id}</td>
+              <td>{item.value}</td>
+              <td>
                 <input
                   type="checkbox"
                   checked={selected.has(item.id)}
@@ -96,6 +137,7 @@ function App() {
       </table>
 
       {loading && <p>Loading...</p>}
+
     </div>
   );
 }
