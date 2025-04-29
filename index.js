@@ -23,7 +23,7 @@ app.get("/items", (req, res) => {
 		result = result.filter((item) => item.value.toString().includes(search))
 	}
 
-	result.sort((a, b) => (a.sortOrder || a.id) - (b.sortOrder || b.id))
+	result.sort((a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id))
 
 	const pages = result.slice(Number(skip), Number(skip) + Number(limit))
 
@@ -50,32 +50,24 @@ app.get("/state", (req, res) => {
 })
 
 app.post("/reorder", (req, res) => {
-	const { from, to, search = "" } = req.body
+	const { movedId, beforeId, afterId } = req.body
 
-	if (typeof from !== "number" || typeof to !== "number") {
-		return res.status(400).json({ error: "Invalid indices" })
+	const movedItem = items.find((i) => i.id === movedId)
+	const beforeItem = items.find((i) => i.id === beforeId)
+	const afterItem = items.find((i) => i.id === afterId)
+
+	if (!movedItem) {
+		return res.status(400).json({ error: "Moved item not found" })
 	}
 
-	let filteredItems = items
-		.filter((item) => item.value.toString().includes(search))
-		.sort((a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id))
-
-	if (from < 0 || from >= filteredItems.length || to < 0 || to >= filteredItems.length) {
-		return res.status(400).json({ error: "Index out of bounds" })
-	}
-
-	const movedItem = filteredItems.splice(from, 1)[0]
-	filteredItems.splice(to, 0, movedItem)
-
-	const before = filteredItems[to - 1] ?? null
-	const after = filteredItems[to + 1] ?? null
-
-	if (before && after) {
-		movedItem.sortOrder = (before.sortOrder + after.sortOrder) / 2
-	} else if (!before && after) {
-		movedItem.sortOrder = after.sortOrder - 1
-	} else if (before && !after) {
-		movedItem.sortOrder = before.sortOrder + 1
+	if (beforeItem && afterItem) {
+		movedItem.sortOrder = (beforeItem.sortOrder + afterItem.sortOrder) / 2
+	} else if (beforeItem && !afterItem) {
+		movedItem.sortOrder = beforeItem.sortOrder + 1
+	} else if (!beforeItem && afterItem) {
+		movedItem.sortOrder = afterItem.sortOrder - 1
+	} else {
+		movedItem.sortOrder = 0
 	}
 
 	res.json({ success: true })

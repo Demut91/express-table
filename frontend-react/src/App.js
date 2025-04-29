@@ -109,7 +109,26 @@ function App() {
 			})
 
 			dragger.on("drop", (from, to) => {
-				axios.post(`${API_URL}/reorder`, { from: from - 1, to: to - 1 })
+				const currentItems = [...items]
+
+				const movedItem = currentItems[from - 1]
+				let beforeItem = null
+				let afterItem = null
+
+				if (to === 1) {
+					afterItem = currentItems[0]
+				} else {
+					beforeItem = currentItems[to - 2]
+					afterItem = currentItems[to - 1]
+				}
+
+				if (!movedItem) return
+
+				axios.post(`${API_URL}/reorder`, {
+					movedId: movedItem.id,
+					beforeId: beforeItem?.id || null,
+					afterId: afterItem?.id || null,
+				})
 			})
 
 			draggerRef.current = dragger
